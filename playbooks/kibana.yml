@@ -1,0 +1,65 @@
+- hosts: kibana
+  tasks:
+    - selinux:
+        state: disabled
+
+    - name: install basic package glibc-2.17
+      block:
+        - yum:
+            name: gcc
+            state: installed
+        - copy:
+            src: "../files/glibc-2.17.tar.gz"
+            dest: "/tmp/"
+        - name: "check and install glibc-2.17, might take 10 minutes"
+          shell: |
+            strings /lib64/libc.so.6 | grep GLIBC | grep 2.17
+            if [ $? -eq 0 ]; then
+                exit 0
+            fi
+            cd /tmp
+            tar -xf glibc-2.17.tar.gz
+            cd glibc-2.17
+            mkdir build; cd build
+            ../configure --prefix=/usr --disable-profile --enable-add-ons \
+              --with-headers=/usr/include --with-binutils=/usr/bin
+            make -j 8
+            make install
+            exit 0
+      when:
+        - ansible_facts['distribution'] == "CentOS"
+        - ansible_facts['distribution_major_version'] == "6"
+
+    - name: install kibana
+      block:
+        - name: "Uploading kibana-{{ kibana_version }}-x86_64.rpm"
+          copy:
+            src: "../files/kibana-{{ kibana_version }}-x86_64.rpm"
+            dest: /tmp/
+        - name: "Installing kibana-{{ kibana_version }}-x86_64.rpm"
+          yum:
+            name: "/tmp/kibana-{{ kibana_version }}-x86_64.rpm"
+            state: present
+
+    - name: config kibana
+      template:
+        src: "../templates/kibana.yml.j2"
+        dest: "/etc/kibana/kibana.yml"
+
+
+    - name: start kibana
+      block:
+        - service:
+            name: kibana
+            state: started
+            enabled: yes
+
+        - wait_for:
+            host: "0.0.0.0"
+            port: "5601"
+            timeout: 180
+
+    - debug:
+        msg:
+        - "Kibana has been installed"
+

@@ -1,0 +1,69 @@
+---
+- hosts: elasticsearch
+  vars: {}
+  tasks:
+  - selinux:
+      state: disabled
+
+  - name: install elasticsearch
+    block:
+    - name: copy rpm
+      copy:
+        src: "../files/elasticsearch-7.2.0-x86_64.rpm"
+        dest: "/tmp/elasticsearch-7.2.0-x86_64.rpm"
+    - name: install rpm
+      yum:
+        name: "/tmp/elasticsearch-7.2.0-x86_64.rpm"
+        state: installed
+
+  - name: config elasticsearch.yml
+    template:
+      src: "../templates/elasticsearch.yml.j2"
+      dest: "/etc/elasticsearch/elasticsearch.yml"
+      backup: yes
+
+  - name: config iptables for elasticsearch
+    iptables:
+      action: insert
+      chain: INPUT
+      destination_port: "{{ item }}"
+      protocol: tcp
+      jump: ACCEPT
+    with_items: ["9300", "9200"]
+    when:
+      - ansible_facts['distribution'] == "CentOS"
+      - ansible_facts['distribution_major_version'] == "6"
+
+  - name: config limit.conf
+    lineinfile:
+      path: "/etc/security/limits.conf"
+      insertbefore: "# End of file"
+      line: "{{ item }}"
+    with_items:
+    - elasticsearch    -       nofile          65536
+    - elasticsearch    -       nproc           4096
+    - "* soft nofile 65535"
+    - "* hard nofile 65535"
+
+  - name: config java
+    lineinfile:
+      regexp: "^JAVA_HOME"
+      path: "/etc/sysconfig/elasticsearch"
+      insertbefore: "#JAVA_HOME="
+      line: "JAVA_HOME=/usr/share/elasticsearch/jdk/"
+
+  - name: start elasticsearch
+    service:
+      enabled: yes
+      name: elasticsearch
+      state: started
+
+  - wait_for:
+      host: "0.0.0.0"
+      port: "{{ item }}"
+      timeout: 120
+    with_items: ["9300", "9200"]
+
+  - debug:
+      msg:
+      - "Elasticsearch has been installed"

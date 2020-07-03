@@ -1,0 +1,43 @@
+{
+  "order": 1,
+  "index_patterns": [
+    "{{index_patterns}}"
+  ],
+  "settings": {
+    "index": {
+      "number_of_shards": "{{number_of_shards}}",
+      "number_of_replicas": "{{number_of_replicas}}",
+      "refresh_interval": "{{refresh_interval}}"
+    }
+  },
+  "mappings": {
+    "dynamic": true,
+    "dynamic_templates": [
+      {
+        "tpl_string": {
+          "match_mapping_type": "string",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      }
+    ],
+    "numeric_detection": false,
+    "date_detection": false,
+    "properties": {
+      "@timestamp": {
+        "type": "date"
+      },
+      "time": {
+        "type": "date"
+      },
+      "responseTime": {
+        "type": "date"
+      },
+      "scanTime": {
+        "type": "date"
+      }
+    }
+  },
+  "aliases": {}
+}

@@ -1,0 +1,24 @@
+---
+- name: Config for kafka-zookeeper zookeeper.properties
+  template:
+    src: templates/zookeeper.properties.j2
+    dest: "{{ kafka_home }}/config/zookeeper.properties"
+- name: Create data dir of kafka-zookeeper
+  file:
+    path: "{{ zk_data_dir }}"
+    state: directory
+    owner: "{{ service_user }}"
+- name: Config for kafka-zookeeper myid
+  template:
+    src: templates/myid.j2
+    dest: "{{ zk_data_dir }}/myid"
+    owner: "{{ service_user }}"
+- name: Config for kafka server.properties
+  template:
+    src: templates/server.properties.j2
+    dest: "{{ kafka_home }}/config/server.properties"
+- name: Create log data dir of kafka
+  file:
+    path: "{{ broker_log_dir }}"
+    state: directory
+    owner: "{{ service_user }}"

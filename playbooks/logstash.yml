@@ -1,0 +1,117 @@
+---
+- hosts: logstash
+  vars:
+    service_user: craaselk
+    jdk_path: "{{ install_root_path }}/jdk1.8.0_212"
+    logstash_path: "{{ install_root_path }}/logstash-7.2.0"
+  tasks:
+  - selinux:
+      state: disabled
+
+  - name: install logstash with jdk
+    block:
+    - name: unzip tar file of jdk
+      unarchive:
+        decrypt: no
+        copy: yes
+        keep_newer: yes
+        src: "../files/jdk-8u212-linux-x64.tar.gz"
+        dest: "{{ install_root_path }}"
+        creates: "{{ jdk_path }}"
+        owner: "{{ service_user }}"
+    - name: unzip tar file of logstash
+      unarchive:
+        decrypt: no
+        copy: yes
+        keep_newer: yes
+        src: "../files/logstash-7.2.0.tar.gz"
+        dest: "{{ install_root_path }}/"
+        creates: "{{ logstash_path }}"
+        owner: "{{ service_user }}"
+    - name: config logstash.yml
+      template:
+        src: "../templates/logstash.yml.j2"
+        dest: "{{ logstash_path }}/config/logstash.yml"
+        backup: yes
+    - file:
+        path: "/var/log/logstash/"
+        state: directory
+        owner: "{{ service_user }}"
+    - copy:
+        src: "../files/logstash-offline-plugins-7.2.0.zip"
+        dest: "/tmp"
+    - shell: |
+        export JAVA_HOME="{{ jdk_path }}"
+        export JAVACMD="${JAVA_HOME}/bin/java"
+        ./bin/logstash-plugin list | grep "logstash-input-kafka"
+        [ $? -eq 0 ] && exit 0
+        ./bin/logstash-plugin install file:///tmp/logstash-offline-plugins-7.2.0.zip
+      args:
+        chdir: "{{ logstash_path }}"
+
+  - name: config logstash
+    block:
+    - file:
+        dest: "{{ logstash_path }}/config/conf.d"
+        state: directory
+    - name: config pipeline
+      template:
+        src: "../templates/logstash.pipline.conf.j2"
+        dest: "{{ logstash_path }}/config/conf.d/pipline.conf"
+        backup: yes
+
+  - name: config template
+    template:
+      src: "../templates/logstash.template.json.j2"
+      dest: "{{ logstash_path }}/config/template.json"
+      backup: yes
+
+  - name: config logstash service
+    block:
+    - name: config systemd
+      template:
+        src: "../templates/logstash.service.systemd.j2"
+        dest: "/usr/lib/systemd/system/logstash.service"
+        mode: "0644"
+      when:
+        - ansible_facts['distribution'] == "CentOS"
+        - ansible_facts['distribution_major_version'] == "7"
+    - name: config initd
+      template:
+        src: "../templates/logstash.service.initd.j2"
+        dest: "/etc/init.d/logstash"
+        mode: "0755"
+      when:
+        - ansible_facts['distribution'] == "CentOS"
+        - ansible_facts['distribution_major_version'] == "6"
+
+  - name: "start logstash"
+    block:
+    - name: "start by systemd"
+      systemd:
+        name: logstash
+        enabled: yes
+        state: restarted
+        daemon_reload: yes
+      when:
+        - ansible_facts['distribution'] == "CentOS"
+        - ansible_facts['distribution_major_version'] == "7"
+    - name: "start by initd"
+      service:
+        enabled: yes
+        name: logstash
+        state: restarted
+      when:
+        - ansible_facts['distribution'] == "CentOS"
+        - ansible_facts['distribution_major_version'] == "6"
+
+  - wait_for:
+      host: "0.0.0.0"
+      port: "5044"
+      timeout: 240
+    when: not groups['kafka']
+
+  - debug:
+      msg:
+      - "Logstash has been installed"
+

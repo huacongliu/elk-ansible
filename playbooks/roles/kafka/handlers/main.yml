@@ -1,0 +1,38 @@
+- name: reload systemd
+  command: systemctl daemon-reload
+
+- name: enable kafka-zookeeper
+  systemd:
+    name: kafka-zookeeper
+    enabled: yes
+    masked: no
+- name: restart kafka-zookeeper
+  systemd:
+    name: kafka-zookeeper
+    state: restarted
+- name: enable kafka
+  systemd:
+    name: kafka
+    enabled: yes
+    masked: no
+- name: restart kafka
+  systemd:
+    name: kafka
+    state: restarted
+
+- name: enable kafka-zookeeper-sysvinit
+  service:
+    name: kafka-zookeeper
+    enabled: yes
+- name: restart kafka-zookeeper-sysvinit
+  service:
+    name: kafka-zookeeper
+    state: restarted
+- name: enable kafka-sysvinit
+  service:
+    name: kafka
+    enabled: yes
+- name: restart kafka-sysvinit
+  service:
+    name: kafka
+    state: restarted

@@ -1,0 +1,107 @@
+#!/bin/sh
+
+# chkconfig: 2345 90 10
+# description: logstash-service
+
+PATH={{install_root_path}}/logstash-7.2.0/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+NAME=logstash
+DESC=logstash
+
+COMMAND="{{logstash_path}}/bin/logstash"
+CONFIG="{{logstash_path}}/config/conf.d"
+
+export JAVA_HOME="{{jdk_path}}"
+export JAVACMD="${JAVA_HOME}/bin/java"
+
+status_logstash(){
+  # status logstash process
+  # 0 running
+  # 1 not running
+  ps -ef | grep "$CONFIG" | grep -v "grep" > /dev/null
+  return $?
+}
+
+start_logstash() {
+  # start logstash process
+  #   0 start running
+  #   1 already running
+  #   2 error
+  if status_logstash; then
+    return 1
+  else
+    nohup $COMMAND -f "${CONFIG}" > /var/log/logstash/service.log 2>&1 &
+  fi
+  if status_logstash; then
+    return 0
+  else
+    return 2
+  fi
+
+}
+
+stop_logstash() {
+  # stop logstash process
+  #   0 stop process
+  #   1 already stoped
+  #   2 error
+	if status_logstash; then
+	  ps -ef | grep "$CONFIG" | grep -v "grep"| awk '{print $2}' | xargs kill -9
+	else
+	  return 1
+	fi
+	if status_logstash; then
+	  return 2
+	else
+	  return 0
+	fi
+}
+
+restart_logstash(){
+  # stop logstash process
+  #   0 restart process
+  #   1 stop error
+  #   2 start error
+  stop_logstash
+  if [ $? -eq 2 ]; then
+    return 1
+  fi
+  start_logstash
+  if [ $? -eq 2 ]; then
+    return 2
+  fi
+}
+
+case "$1" in
+	start)
+		echo "Starting $DESC" "$NAME"
+		start_logstash
+		case "$?" in
+			0|1) echo started ;;
+			2)   echo error ;;
+		esac
+		;;
+	stop)
+		echo "Stopping $DESC" "$NAME"
+		stop_logstash
+		case "$?" in
+			0|1) echo stopped ;;
+			2)   echo error ;;
+		esac
+		;;
+	restart)
+		echo "Restarting $DESC" "$NAME"
+		restart_logstash
+		;;
+	status)
+		status_logstash
+		case "$?" in
+			0) echo running ;;
+			1) echo stopped ;;
+			2) echo error ;;
+		esac
+		;;
+	*)
+		echo "Usage: $NAME {start|stop|restart|status}" >&2
+		exit 3
+		;;
+esac

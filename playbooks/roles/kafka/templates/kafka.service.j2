@@ -1,0 +1,13 @@
+[Unit]
+Description=Apache Kafka
+After=network.target
+
+[Service]
+User={{ service_user }}
+Environment="JAVA_HOME={{ java_home }}"
+Type=simple
+ExecStart="{{ kafka_home }}/bin/kafka-server-start.sh" "{{ kafka_home }}/config/server.properties"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

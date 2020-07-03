@@ -1,0 +1,12 @@
+dataDir={{ zk_data_dir }}
+clientPortAddress=0.0.0.0
+clientPort=2181
+{% for host in groups['kafka_zookeeper'] %}
+server.{{ loop.index }}={{ host }}:2888:3888
+{% endfor %}
+tickTime=2000
+initLimit=10
+syncLimit=5
+maxClientCnxns=0
+autopurge.purgeInterval=24
+autopurge.snapRetainCount=30

@@ -1,0 +1,30 @@
+broker.id={% for host in groups['kafka'] %}
+  {%- if host == inventory_hostname -%}
+    {{ loop.index }}
+  {%- endif -%}
+{% endfor %}
+
+delete.topic.enable=true
+listeners=PLAINTEXT://{{ inventory_hostname }}:9092
+num.network.threads=4
+num.io.threads=8
+socket.send.buffer.bytes=10485760
+socket.receive.buffer.bytes=10485760
+socket.request.max.bytes=104857600
+log.dirs={{ broker_log_dir }}
+num.partitions=8
+default.replication.factor=1
+offsets.topic.replication.factor=1
+num.recovery.threads.per.data.dir=1
+log.segment.bytes=1073741824
+log.retention.hours=24
+log.retention.check.interval.ms=600000
+zookeeper.connect={% for host in groups['kafka_zookeeper'] %}
+{% if loop.index > 1%},{% endif %}{{ host }}:2181
+{%- endfor %}/kafka
+zookeeper.connection.timeout.ms=6000
+auto.create.topics.enable=true
+auto.leader.rebalance.enable=true
+num.replica.fetchers=4
+queued.max.requests=1024
+message.max.bytes=10485760

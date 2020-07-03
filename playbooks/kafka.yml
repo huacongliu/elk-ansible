@@ -1,0 +1,14 @@
+---
+- name: "Install Kafka (with bundled ZooKeeper)"
+  hosts: kafka
+  vars:
+    install_dir: "{{ install_root_path }}"
+    kafka_home: "{{ install_dir }}/kafka"
+    java_home: "{{ kafka_home }}/jdk"
+    service_user: craaselk
+  tasks:
+  - selinux:
+      state: disabled
+
+  roles:
+    - kafka

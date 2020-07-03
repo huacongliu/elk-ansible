@@ -1,0 +1,13 @@
+[Unit]
+Description=Kafka Bundled ZooKeeper
+After=network.target
+
+[Service]
+User={{ service_user }}
+Environment="JAVA_HOME={{ java_home }}"
+Type=simple
+ExecStart="{{ kafka_home }}/bin/zookeeper-server-start.sh" "{{ kafka_home }}/config/zookeeper.properties"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

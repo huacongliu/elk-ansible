@@ -1,0 +1,415 @@
+input {
+{% if groups['kafka'] %}
+    kafka {
+        bootstrap_servers => "{{groups['kafka'][0]}}:9092{% for host in groups['kafka'][1:] %},{{host}}:9092{% endfor %}"
+        topics => ["{{kafka_topic}}"]
+        group_id => "{{kafka_group_id}}"
+        codec => json {
+            charset => "UTF-8"
+        }
+    }
+{% else %}
+    beats {
+        port => "5044"
+        codec => json {
+            charset => "UTF-8"
+        }
+    }
+{% endif %}
+}
+
+
+filter {
+
+    if [log][type] == "deviceCheckCode" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg},%{stationID},%{stationName},%{lineID},%{lineName},%{deviceID},%{uid},%{cardNo},%{QRcode}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-device-check-code"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+    if [log][type] == "deviceHeartBeat" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg},%{stationID},%{stationName},%{lineID},%{lineName},%{deviceID}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-device-heart-beat"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+    if [log][type] == "tripManualReport" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg},%{uid},%{cardNo},%{stationID},%{stationName},%{lineID},%{lineName},%{deviceID},%{scanTime},%{tripFlag},%{operater}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-trip-manual-report"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            date {
+                match => ["scanTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "scanTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+    if [log][type] == "tripOrderMatch" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg},%{uid},%{cardNo},%{outTradeNo},%{startStationID},%{startStationName},%{startLineID},%{startLineName},%{startDeviceID},%{endStationID},%{endStationName},%{endLineID},%{endLineName},%{endDeviceID},%{scanTime},%{price},%{orderDesc},%{inRecordID},%{outRecordID}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-trip-order-match"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+                "price" => "float"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            date {
+                match => ["scanTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "scanTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+    if [log][type] == "tripOrderSubmitAlipay" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg},%{uid},%{cardNo},%{outTradeNo},%{scanTime},%{price},%{orderDesc},%{inRecordID},%{outRecordID}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-trip-order-submit-alipay"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+                "price" => "float"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            date {
+                match => ["scanTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "scanTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+    if [log][type] == "tripReport" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg},%{uid},%{cardNo},%{stationID},%{stationName},%{lineID},%{lineName},%{deviceID},%{scanTime},%{tripFlag},%{operater}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-trip-report"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            date {
+                match => ["scanTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "scanTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+    if [log][type] == "tripSubmitAlipay" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg},%{uid},%{cardNo},%{stationID},%{stationName},%{lineID},%{lineName},%{deviceID},%{scanTime},%{tripFlag},%{operater},%{recordID}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-trip-submit-alipay"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            date {
+                match => ["scanTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "scanTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+    if [log][type] == "userAccountRegister" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg},%{uid},%{cardNo}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-user-account-register"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+    if [log][type] == "userDataAuth" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg},%{uid},%{cardNo},%{authCode}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-user-data-auth"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+    if [log][type] == "digest-common-error" {
+        dissect {
+            mapping => {
+                "message" => "%{time},%{logLevel},%{path},%{traceid},%{channelSource},%{bizCode},%{bizNo},%{temp},%{+temp},%{+temp},%{responseTime},%{timeConsuming},%{resultCode},%{resultMsg}"
+            }
+            add_field => {
+                "[@metadata][index_name]" => "logstash-digest-common-error"
+            }
+            convert_datatype => {
+                "timeConsuming" => "int"
+            }
+            remove_field => ["message", "log"]
+        }
+        if "_dissectfailure" not in [tags] {
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "@timestamp"
+            }
+            date {
+                match => ["time", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "time"
+            }
+            date {
+                match => ["responseTime", "yyyy-MM-dd HH:mm:ss SSS"]
+                timezone => "Asia/Shanghai"
+                target => "responseTime"
+            }
+            ruby {
+                code => "event.set('[@metadata][index_time]', Time.at(event.get('@timestamp').time.to_i + 28800).getutc.strftime('%Y%m%d+0800'))"
+            }
+        }
+    }
+
+}
+
+
+output {
+    # stdout { codec => rubydebug { metadata => true } }
+
+    elasticsearch {
+        hosts => ["{{groups['elasticsearch'][0]}}"{% for host in groups['elasticsearch'][1:] %}, "{{host}}:9200"{% endfor %}]
+        index => "%{[@metadata][index_name]}-%{[@metadata][index_time]}"
+        manage_template => true
+        template_name => "{{template_name}}"
+        template => "{{logstash_path}}/config/template.json"
+        template_overwrite => true
+    }
+}

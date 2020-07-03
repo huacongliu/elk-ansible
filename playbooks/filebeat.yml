@@ -1,0 +1,35 @@
+---
+- hosts: filebeat
+  vars: {}
+  tasks:
+  - selinux:
+      state: disabled
+
+  - name: install filebeat
+    block:
+    - name: copy rpm
+      copy:
+        src: "../files/filebeat-7.2.0-x86_64.rpm"
+        dest: "/tmp/"
+    - name: install rpm
+      yum:
+          name: "/tmp/filebeat-7.2.0-x86_64.rpm"
+          state: installed
+    - file:
+        path: "/var/log/filebeat/"
+        state: "directory"
+ 
+  - name: config filebeat
+    template:
+      src: ../templates/filebeat.yml.j2
+      dest: "/etc/filebeat/filebeat.yml"
+ 
+  - name: start filebeat
+    service:
+      name: filebeat
+      state: started
+      enabled: yes
+
+  - debug:
+      msg:
+      - "Filebeat has been installed"

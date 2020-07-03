@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+# Kafka Bundled ZooKeeper
+#
+# chkconfig: 2345 80 20
+# description: Kafka bundled zookeeper.
+#
+
+THIS="${0}"
+while [ -h "${THIS}" ]; do
+    DIR="$(cd -P "$(dirname "${THIS}")" && pwd)"
+    THIS="$(readlink "${THIS}")"
+    [[ "${THIS}" != /* ]] && THIS="${DIR}/${THIS}"
+done
+
+WORK_DIR="$(dirname "${THIS}")"
+KAFKA_HOME="{{ kafka_home }}"
+export JAVA_HOME="{{ java_home }}"
+
+
+_start() {
+    _status
+    if [ $? -eq 0 ]; then
+        echo "already running"
+        return 0
+    fi
+    "${KAFKA_HOME}/bin/zookeeper-server-start.sh" -daemon "${KAFKA_HOME}/config/zookeeper.properties"
+    return $?
+}
+
+_stop() {
+    _status
+    if [ $? -eq 1 ]; then
+        return 0
+    fi
+    pids=$(ps ax | grep "{{ java_home }}/bin/java" | grep kafka | grep zookeeper-gc | grep -v grep | awk '{print $1}')
+    kill -s TERM $pids
+    _wait_stop
+    return $?
+}
+
+_restart() {
+    _stop && _start
+    return $?
+}
+
+_status() {
+    pids=$(ps ax | grep "{{ java_home }}/bin/java" | grep kafka | grep zookeeper-gc | grep -v grep | awk '{print $1}')
+    if [ -n "${pids}" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+_wait_stop() {
+    for s in 1 2 4 8 16; do
+        _status
+        rc=$?
+        if [ $rc -eq 1 ]; then
+            return 0
+        fi
+        sleep $s
+    done
+    return 1
+}
+
+_service() {
+    case "${2}" in
+        start)
+            _start
+            return $?
+        ;;
+        stop)
+            _stop
+            return $?
+        ;;
+        restart)
+            _restart
+            return $?
+        ;;
+        status)
+            _status
+            rc=$?
+            if [ $rc -eq 0 ]; then
+                echo "running"
+            else
+                echo "stopped"
+            fi
+            return $rc
+        ;;
+        *)
+            echo "Usage: ${1} {start|stop|restart|status}"
+            return 1
+        ;;
+    esac
+}
+
+
+cd "${WORK_DIR}"
+_service "${0}" "${1}"
+exit $?

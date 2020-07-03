@@ -1,0 +1,72 @@
+---
+- name: Unpack Kafka tarball
+  unarchive:
+    src: "../files/kafka_{{ kafka_version }}.tgz"
+    dest: "{{ install_dir }}/"
+    creates: "{{ install_dir }}/kafka_{{ kafka_version }}"
+    copy: yes
+    keep_newer: yes
+    decrypt: no
+    owner: "{{ service_user }}"
+- name: Make Kafka link
+  file:
+    src: "{{ install_dir }}/kafka_{{ kafka_version }}"
+    dest: "{{ kafka_home }}"
+    state: link
+    force: no
+- name: Unpack JDK tarball in Kafka directory
+  unarchive:
+    src: "../files/jdk-8u212-linux-x64.tar.gz"
+    dest: "{{ kafka_home }}/"
+    creates: "{{ kafka_home }}/jdk1.8.0_212"
+    copy: yes
+    keep_newer: yes
+    decrypt: no
+- name: Make JDK link
+  file:
+    src: "{{ kafka_home }}/jdk1.8.0_212"
+    dest: "{{ java_home }}"
+    state: link
+    force: no
+
+- name: Create systemd unit file kafka-zookeeper.service
+  when:
+    - ansible_facts['distribution'] == "CentOS"
+    - ansible_facts['distribution_major_version'] == "7"
+  template:
+    src: templates/kafka-zookeeper.service.j2
+    dest: /usr/lib/systemd/system/kafka-zookeeper.service
+  notify:
+    - reload systemd
+    - enable kafka-zookeeper
+- name: Create systemd unit file kafka.service
+  when:
+    - ansible_facts['distribution'] == "CentOS"
+    - ansible_facts['distribution_major_version'] == "7"
+  template:
+    src: templates/kafka.service.j2
+    dest: /usr/lib/systemd/system/kafka.service
+  notify:
+    - reload systemd
+    - enable kafka
+
+- name: Create sysvinit service file kafka-zookeeper
+  when:
+    - ansible_facts['distribution'] == "CentOS"
+    - ansible_facts['distribution_major_version'] == "6"
+  template:
+    src: templates/kafka-zookeeper.j2
+    dest: /etc/init.d/kafka-zookeeper
+    mode: u=rwx,g=rx,o=rx
+  notify:
+    - enable kafka-zookeeper-sysvinit
+- name: Create sysvinit service file kafka
+  when:
+    - ansible_facts['distribution'] == "CentOS"
+    - ansible_facts['distribution_major_version'] == "6"
+  template:
+    src: templates/kafka.j2
+    dest: /etc/init.d/kafka
+    mode: u=rwx,g=rx,o=rx
+  notify:
+    - enable kafka-sysvinit

@@ -1,0 +1,5 @@
+{% for host in groups['kafka_zookeeper'] %}
+{% if host == inventory_hostname %}
+{{ loop.index }}
+{% endif %}
+{% endfor %}

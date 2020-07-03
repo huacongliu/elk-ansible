@@ -1,0 +1,29 @@
+---
+- hosts: all_nodes
+  vars:
+    user_name: craaselk
+    user_pass: "123qwe"
+  remote_user: root
+  tasks:
+    - selinux:
+        state: disabled
+
+    - name: "add user {{user_name}}"
+      user:
+        name: "{{user_name}}"
+        password: "{{user_pass}}"
+        state: present
+
+    - name: add sudo permission
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        insertafter: "root    ALL=(ALL:ALL) ALL"
+        line: "{{user_name}} ALL=(ALL) NOPASSWD: ALL"
+        validate: "visudo -cf %s"
+
+    - name: add id_rsa.pub
+      authorized_key:
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        state: present
+        user: "{{user_name}}"

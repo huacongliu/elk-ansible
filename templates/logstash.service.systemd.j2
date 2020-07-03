@@ -1,0 +1,13 @@
+[Unit]
+Description=logstash
+After=network.target
+
+[Service]
+User={{service_user}}
+Environment="JAVA_HOME={{install_root_path}}/jdk1.8.0_212/" "JAVACMD={{install_root_path}}/jdk1.8.0_212/bin/java"
+Type=simple
+ExecStart="{{install_root_path}}/logstash-7.2.0/bin/logstash" -f "{{install_root_path}}/logstash-7.2.0/config/conf.d/*.conf"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
