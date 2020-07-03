@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ELK-Ansible 是基于 [Ansible 2.6+](https://docs.ansible.com/ansible/latest/index.html) [Playbooks](https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html) 研发的 [ELK](https://www.elastic.co) 快速部署工具
 
 
@@ -215,3 +216,7 @@ hosts 配置修改示例：
 ```bash
 bash ./deploy.sh
 ```
+=======
+# elk-ansible
+ansible部署elf
+>>>>>>> e826d476e96395a978d7b7bafb6c6b7a92450d39
