@@ -212,11 +212,5 @@ hosts 配置修改示例：
 
 
 ## 六、执行部署脚本
-
-```bash
 bash ./deploy.sh
-```
-=======
-# elk-ansible
-ansible部署elf
->>>>>>> e826d476e96395a978d7b7bafb6c6b7a92450d39
+
