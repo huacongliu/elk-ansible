@@ -215,4 +215,3 @@ hosts 配置修改示例：
 ```
 bash ./deploy.sh
 ```
-
