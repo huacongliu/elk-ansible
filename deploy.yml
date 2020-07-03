@@ -1,0 +1,15 @@
+---
+- name: deploy elasticsearch
+  import_playbook: playbooks/elasticsearch.yml
+
+- name: deploy kafka
+  import_playbook: playbooks/kafka.yml
+
+- name: deploy logstash
+  import_playbook: playbooks/logstash.yml
+
+- name: deploy filebeat
+  import_playbook: playbooks/filebeat.yml
+
+- name: deploy kibana
+  import_playbook: playbooks/kibana.yml
